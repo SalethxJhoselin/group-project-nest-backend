@@ -1,4 +1,3 @@
-// student.entity.ts
 import { ApiProperty } from '@nestjs/swagger';
 import {
     Column,
@@ -9,6 +8,7 @@ import {
     UpdateDateColumn
 } from 'typeorm';
 import { AcademicInfo } from '../academic_info/academic_info.entity';
+import { Certification } from '../certification/certification.entity';
 
 @Entity('students')
 export class Student {
@@ -63,4 +63,8 @@ export class Student {
     @ApiProperty({ type: () => [AcademicInfo], description: 'Información académica del estudiante' })
     @OneToMany(() => AcademicInfo, (academicInfo) => academicInfo.student)
     academicInfo: AcademicInfo[];
+
+    @ApiProperty({ type: () => [Certification], description: 'Certificaciones del estudiante' })
+    @OneToMany(() => Certification, (certification) => certification.student)
+    certifications: Certification[];
 }

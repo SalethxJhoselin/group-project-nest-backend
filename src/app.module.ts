@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AcademicInfoModule } from './slices/academic_info/academic-info.module';
 import { AuthModule } from './slices/auth/auth.module';
+import { CertificationModule } from './slices/certification/certification.module';
 import { CompanyModule } from './slices/company/company.module';
 import { StudentModule } from './slices/student/student.module';
 
@@ -13,7 +14,8 @@ import { StudentModule } from './slices/student/student.module';
     AuthModule,
     StudentModule,
     CompanyModule,
-    AcademicInfoModule
+    AcademicInfoModule,
+    CertificationModule
   ],
   controllers: [AppController],
   providers: [AppService],
