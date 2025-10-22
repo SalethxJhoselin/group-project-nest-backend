@@ -10,6 +10,7 @@ import {
 import { AcademicInfo } from '../academic_info/academic_info.entity';
 import { Certification } from '../certification/certification.entity';
 import { Project } from '../project/project.entity';
+import { StudentSkill } from '../skill/entity/student-skill.entity.dto';
 
 @Entity('students')
 export class Student {
@@ -72,4 +73,8 @@ export class Student {
     @ApiProperty({ type: () => [Project], description: 'Proyectos del estudiante' })
     @OneToMany(() => Project, (project) => project.student)
     projects: Project[];
+
+    @ApiProperty({ type: () => [StudentSkill], description: 'Skills del estudiante con nivel y experiencia' })
+    @OneToMany(() => StudentSkill, (studentSkill) => studentSkill.student)
+    studentSkills: StudentSkill[];
 }
