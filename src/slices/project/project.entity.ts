@@ -4,11 +4,11 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
+  ManyToOne, OneToMany, PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
 import { Student } from '../student/student.entity';
+import { ProjectTechnology } from '../technology/entity/project-technology.entity';
 
 @Entity('projects')
 export class Project {
@@ -51,4 +51,8 @@ export class Project {
 
   @Column()
   student_id: string;
+
+  @ApiProperty({ type: () => [ProjectTechnology], description: 'Tecnologías utilizadas en el proyecto' })
+  @OneToMany(() => ProjectTechnology, (projectTechnology) => projectTechnology.project)
+  projectTechnologies: ProjectTechnology[];
 }

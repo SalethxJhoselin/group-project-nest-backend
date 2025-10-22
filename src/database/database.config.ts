@@ -7,6 +7,8 @@ import { Project } from 'src/slices/project/project.entity';
 import { Skill } from 'src/slices/skill/entity/skill.entity';
 import { StudentSkill } from 'src/slices/skill/entity/student-skill.entity.dto';
 import { Student } from 'src/slices/student/student.entity';
+import { ProjectTechnology } from 'src/slices/technology/entity/project-technology.entity';
+import { Technology } from 'src/slices/technology/entity/technology.entity';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => ({
     type: 'postgres',
@@ -15,7 +17,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     username: configService.get('DATABASE_USERNAME'),
     password: configService.get('DATABASE_PASSWORD'),
     database: configService.get('DATABASE_NAME'),
-    entities: [Student, Company, AcademicInfo, Certification, Project, Skill, StudentSkill],
+    entities: [Student, Company, AcademicInfo, Certification, Project, Skill, StudentSkill, Technology, ProjectTechnology],
     synchronize: true,
     ssl: { rejectUnauthorized: false },
 });

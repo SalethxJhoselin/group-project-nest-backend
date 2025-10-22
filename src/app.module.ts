@@ -9,6 +9,7 @@ import { CompanyModule } from './slices/company/company.module';
 import { ProjectModule } from './slices/project/project.module';
 import { SkillModule } from './slices/skill/skill.module';
 import { StudentModule } from './slices/student/student.module';
+import { TechnologyModule } from './slices/technology/technology.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { StudentModule } from './slices/student/student.module';
     AcademicInfoModule,
     CertificationModule,
     ProjectModule,
-    SkillModule
+    SkillModule,
+    TechnologyModule
   ],
   controllers: [AppController],
   providers: [AppService],
