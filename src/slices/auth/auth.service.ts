@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { supabase } from 'src/shared/supabase.client';
 import { Repository } from 'typeorm';
+import { supabase } from 'src/shared/supabase.client';
 import { Company } from '../company/company.entity';
 import { Student } from '../student/student.entity';
 import { LoginDto, RegisterCompanyDto, RegisterStudentDto } from './dto/auth.dto';
@@ -9,106 +9,131 @@ import { LoginResponseDto } from './dto/login_response.dto';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        @InjectRepository(Student) private studentRepo: Repository<Student>,
-        @InjectRepository(Company) private companyRepo: Repository<Company>,
-    ) { }
+  constructor(
+    @InjectRepository(Student)
+    private readonly studentRepo: Repository<Student>,
+    @InjectRepository(Company)
+    private readonly companyRepo: Repository<Company>,
+  ) {}
 
-    async registerStudent(dto: RegisterStudentDto) {
-        // 1. Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-            email: dto.email,
-            password: dto.password,
-        });
+  // ----------------------------
+  // Registro de Estudiante
+  // ----------------------------
+  async registerStudent(dto: RegisterStudentDto) {
+    const { data, error } = await supabase.auth.signUp({
+      email: dto.email,
+      password: dto.password,
+    });
 
-        if (error || !data.user) {
-            throw new UnauthorizedException(error?.message);
-        }
-
-        // 2. Crear Student local
-        const newStudent = this.studentRepo.create({
-            id: data.user.id, // Mismo ID
-            CI: dto.CI,
-            registration_number: dto.registration_number,
-            first_name: dto.first_name,
-            last_name: dto.last_name,
-            phone_number: dto.phone_number,
-            birthDate: dto.birthDate,
-            email: dto.email,
-            bio: dto.bio,
-        });
-
-        await this.studentRepo.save(newStudent);
-
-        return {
-            message: 'Estudiante registrado correctamente',
-            user: newStudent,
-        };
+    if (error || !data.user) {
+      throw new BadRequestException(error?.message || 'No se pudo registrar el usuario.');
     }
 
-    async registerCompany(dto: RegisterCompanyDto) {
-        // 1. Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-            email: dto.email,
-            password: dto.password,
-        });
+    const newStudent = this.studentRepo.create({
+      id: data.user.id,
+      CI: dto.CI,
+      registration_number: dto.registration_number,
+      first_name: dto.first_name,
+      last_name: dto.last_name,
+      phone_number: dto.phone_number,
+      birthDate: dto.birthDate,
+      email: dto.email,
+      bio: dto.bio,
+    });
 
-        if (error || !data.user) {
-            throw new UnauthorizedException(error?.message);
-        }
+    await this.studentRepo.save(newStudent);
 
-        // 2. Crear Company local
-        const newCompany = this.companyRepo.create({
-            id: data.user.id, // Mismo ID
-            name: dto.name,
-            description: dto.description,
-            website: dto.website,
-            email: dto.email,
-            phone_number: dto.phone_number,
-        });
+    return {
+      message: 'Estudiante registrado correctamente. Revisa tu correo para confirmar la cuenta.',
+      user: newStudent,
+    };
+  }
 
-        await this.companyRepo.save(newCompany);
+  // ----------------------------
+  // Registro de Empresa
+  // ----------------------------
+  async registerCompany(dto: RegisterCompanyDto) {
+    const { data, error } = await supabase.auth.signUp({
+      email: dto.email,
+      password: dto.password,
+    });
 
-        return {
-            message: 'Empresa registrada correctamente',
-            user: newCompany,
-        };
+    if (error || !data.user) {
+      throw new BadRequestException(error?.message || 'No se pudo registrar la empresa.');
     }
 
-    async login(dto: LoginDto): Promise<LoginResponseDto> {
-        const { data, error } = await supabase.auth.signInWithPassword(dto);
-        if (error) throw new UnauthorizedException(error.message);
+    const newCompany = this.companyRepo.create({
+      id: data.user.id,
+      name: dto.name,
+      description: dto.description,
+      website: dto.website,
+      email: dto.email,
+      phone_number: dto.phone_number,
+    });
 
-        let userData: any;
-        let userType: 'student' | 'company';
+    await this.companyRepo.save(newCompany);
 
-        // Buscar estudiante
-        userData = await this.studentRepo.findOne({ where: { id: data.user.id } });
-        if (userData) {
-            userType = 'student';
-            // Asegurar que tenemos todos los campos necesarios
-            userData = {
-                ...userData,
-                user_type: userType
-            };
-        } else {
-            // Buscar empresa
-            userData = await this.companyRepo.findOne({ where: { id: data.user.id } });
-            if (userData) {
-                userType = 'company';
-                userData = {
-                    ...userData,
-                    user_type: userType
-                };
-            } else {
-                throw new UnauthorizedException('Usuario no encontrado en el sistema');
-            }
-        }
+    return {
+      message: 'Empresa registrada correctamente. Revisa tu correo para confirmar la cuenta.',
+      user: newCompany,
+    };
+  }
 
-        return {
-            user: userData,
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-        };
+  // ----------------------------
+  // Inicio de sesión con validación de tipo
+  // ----------------------------
+  async login(dto: LoginDto, userType: 'student' | 'company'): Promise<LoginResponseDto> {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: dto.email,
+      password: dto.password,
+    });
+
+    if (error) {
+      if (error.message === 'Email not confirmed') {
+        throw new UnauthorizedException('Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada.');
+      }
+      if (error.message === 'Invalid login credentials') {
+        throw new UnauthorizedException('Credenciales incorrectas.');
+      }
+      throw new UnauthorizedException(error.message);
     }
+
+    if (userType === 'student') {
+      const student = await this.studentRepo.findOne({ where: { id: data.user.id } });
+      if (!student) throw new UnauthorizedException('No eres un estudiante registrado.');
+      return {
+        user: { ...student, user_type: 'student' },
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      };
+    }
+
+    if (userType === 'company') {
+      const company = await this.companyRepo.findOne({ where: { id: data.user.id } });
+      if (!company) throw new UnauthorizedException('No eres una empresa registrada.');
+      return {
+        user: { ...company, user_type: 'company' },
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      };
+    }
+
+    throw new UnauthorizedException('Tipo de usuario no válido.');
+  }
+
+  // ----------------------------
+  // Confirmar correo (opcional)
+  // ----------------------------
+  async confirmEmail(userId: string) {
+    const { data, error } = await supabase.auth.admin.updateUserById(userId, {
+      email_confirm: true,
+    });
+
+    if (error) throw new BadRequestException(error.message);
+
+    return {
+      message: 'Correo confirmado correctamente.',
+      user: data.user,
+    };
+  }
 }

@@ -5,20 +5,27 @@ import { LoginResponseDto } from './dto/login_response.dto';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
-    @Post('register/student')
-    async registerStudent(@Body() dto: RegisterStudentDto) {
-        return this.authService.registerStudent(dto);
-    }
+  @Post('register/student')
+  async registerStudent(@Body() dto: RegisterStudentDto) {
+    return this.authService.registerStudent(dto);
+  }
 
-    @Post('register/company')
-    async registerCompany(@Body() dto: RegisterCompanyDto) {
-        return this.authService.registerCompany(dto);
-    }
+  @Post('register/company')
+  async registerCompany(@Body() dto: RegisterCompanyDto) {
+    return this.authService.registerCompany(dto);
+  }
 
-    @Post('login')
-    async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
-        return this.authService.login(dto);
-    }
+  // Login estudiante
+  @Post('login/student')
+  async loginStudent(@Body() dto: LoginDto): Promise<LoginResponseDto> {
+    return this.authService.login(dto, 'student');
+  }
+
+  // Login empresa
+  @Post('login/company')
+  async loginCompany(@Body() dto: LoginDto): Promise<LoginResponseDto> {
+    return this.authService.login(dto, 'company');
+  }
 }
