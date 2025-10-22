@@ -6,6 +6,7 @@ import { AcademicInfoModule } from './slices/academic_info/academic-info.module'
 import { AuthModule } from './slices/auth/auth.module';
 import { CertificationModule } from './slices/certification/certification.module';
 import { CompanyModule } from './slices/company/company.module';
+import { ProjectModule } from './slices/project/project.module';
 import { StudentModule } from './slices/student/student.module';
 
 @Module({
@@ -15,7 +16,8 @@ import { StudentModule } from './slices/student/student.module';
     StudentModule,
     CompanyModule,
     AcademicInfoModule,
-    CertificationModule
+    CertificationModule,
+    ProjectModule
   ],
   controllers: [AppController],
   providers: [AppService],
