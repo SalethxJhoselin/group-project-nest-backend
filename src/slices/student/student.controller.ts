@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateStudentDto, UpdateStudentDto } from './dto/create-student.dto';
+import { CVResponseDto } from './dto/cv-response.dto';
 import { Student } from './student.entity';
 import { StudentService } from './student.service';
 // import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard'; // Para después
@@ -17,7 +18,7 @@ import { StudentService } from './student.service';
 @Controller('students')
 // @UseGuards(SupabaseAuthGuard) // Agregar después
 export class StudentController {
-    constructor(private readonly studentService: StudentService) {}
+    constructor(private readonly studentService: StudentService) { }
 
     @Post()
     @ApiOperation({ summary: 'Crear un nuevo estudiante' })
@@ -69,5 +70,17 @@ export class StudentController {
     @ApiOperation({ summary: 'Obtener perfil del estudiante' })
     async getProfile(@Param('id') id: string): Promise<Student> {
         return await this.studentService.getProfile(id);
+    }
+
+    @Get(':id/cv-data')
+    @ApiOperation({ summary: 'Obtener todos los datos del estudiante para generar CV' })
+    @ApiResponse({
+        status: 200,
+        description: 'Datos completos para CV',
+        type: CVResponseDto
+    })
+    @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
+    async getCVData(@Param('id') id: string): Promise<CVResponseDto> {
+        return await this.studentService.getCompleteCVData(id);
     }
 }
