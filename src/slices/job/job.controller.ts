@@ -78,4 +78,25 @@ export class JobController {
   async deactivate(@Param('id') id: string): Promise<Job> {
     return await this.jobService.deactivate(id);
   }
+
+  @Get(':id/with-company')
+  @ApiOperation({
+    summary: 'Obtener vacante con detalles completos de la empresa',
+    description: 'Devuelve toda la información del job junto con los datos de la compañía para generar pruebas de aptitud contextualizadas'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Job y Company encontrados',
+    schema: {
+      type: 'object',
+      properties: {
+        job: { $ref: '#/components/schemas/Job' },
+        company: { $ref: '#/components/schemas/Company' }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Vacante no encontrada' })
+  async findJobWithCompanyDetails(@Param('id') id: string): Promise<{ job: Job }> {
+    return await this.jobService.findJobWithCompanyDetails(id);
+  }
 }
