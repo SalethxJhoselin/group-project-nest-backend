@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AcademicInfo } from '../academic_info/academic_info.entity';
 import { Certification } from '../certification/certification.entity';
+import { JobApplication } from '../job/entity/job-application.entity';
 import { Project } from '../project/project.entity';
 import { StudentSkill } from '../skill/entity/student-skill.entity.dto';
 import { StudentController } from './student.controller';
@@ -13,7 +14,8 @@ import { StudentService } from './student.service';
     AcademicInfo,
     Certification,
     Project,
-    StudentSkill])],
+    StudentSkill,
+    JobApplication])],
   providers: [StudentService],
   controllers: [StudentController],
   exports: [StudentService],
