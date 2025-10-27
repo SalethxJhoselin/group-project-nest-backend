@@ -101,4 +101,19 @@ export class JobService {
     });
     return !!job;
   }
+
+  async findJobWithCompanyDetails(jobId: string): Promise<{ job: Job }> {
+    const job = await this.jobRepo.findOne({
+      where: { id: jobId },
+      relations: ['company']
+    });
+
+    if (!job) {
+      throw new NotFoundException(`Vacante con ID ${jobId} no encontrada`);
+    }
+
+    return {
+      job
+    };
+  }
 }
