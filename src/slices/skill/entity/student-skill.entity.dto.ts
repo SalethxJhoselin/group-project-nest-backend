@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { SkillLevel } from 'src/enum/skillLevel.enum';
 import {
   Column,
   CreateDateColumn,
@@ -9,7 +10,7 @@ import {
   Unique
 } from 'typeorm';
 import { Student } from '../../student/student.entity';
-import { Skill, SkillLevel } from './skill.entity';
+import { Skill } from './skill.entity';
 
 @Entity('student_skills')
 @Unique(['student_id', 'skill_id']) // Un estudiante no puede tener el mismo skill duplicado

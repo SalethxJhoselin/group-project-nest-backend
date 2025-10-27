@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { AcademicInfo } from '../academic_info/academic_info.entity';
 import { Certification } from '../certification/certification.entity';
+import { JobApplication } from '../job/entity/job-application.entity';
 import { Project } from '../project/project.entity';
 import { StudentSkill } from '../skill/entity/student-skill.entity.dto';
 
@@ -77,4 +78,8 @@ export class Student {
     @ApiProperty({ type: () => [StudentSkill], description: 'Skills del estudiante con nivel y experiencia' })
     @OneToMany(() => StudentSkill, (studentSkill) => studentSkill.student)
     studentSkills: StudentSkill[];
+
+    @ApiProperty({ type: () => [JobApplication], description: 'Aplicaciones a vacantes del estudiante' })
+    @OneToMany(() => JobApplication, (jobApplication) => jobApplication.student)
+    jobApplications: JobApplication[];
 }
