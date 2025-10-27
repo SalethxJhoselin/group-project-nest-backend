@@ -1,9 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ApplicationStatus } from 'src/enum/applicationHistory.enum';
 import { Repository } from 'typeorm';
 import { Student } from '../student/student.entity';
+import { ApplicationHistoryService } from './application-history.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { ApplicationStatus, JobApplication } from './entity/job-application.entity';
+import { ApplicationHistory } from './entity/application-history.entity';
+import { JobApplication } from './entity/job-application.entity';
 import { Job } from './entity/job.entity';
 
 @Injectable()
@@ -15,10 +18,11 @@ export class JobApplicationService {
     private studentRepo: Repository<Student>,
     @InjectRepository(Job)
     private jobRepo: Repository<Job>,
+    private historyService: ApplicationHistoryService
   ) { }
 
   async create(createApplicationDto: CreateApplicationDto & { student_id: string }): Promise<JobApplication> {
-    // Verificar que el estudiante existe
+    // Validaciones existentes...
     const student = await this.studentRepo.findOne({
       where: { id: createApplicationDto.student_id }
     });
@@ -26,7 +30,6 @@ export class JobApplicationService {
       throw new NotFoundException('Estudiante no encontrado');
     }
 
-    // Verificar que la vacante existe y está activa
     const job = await this.jobRepo.findOne({
       where: { id: createApplicationDto.job_id, is_active: true }
     });
@@ -34,7 +37,6 @@ export class JobApplicationService {
       throw new NotFoundException('Vacante no encontrada o inactiva');
     }
 
-    // Verificar si ya aplicó
     const existingApplication = await this.applicationRepo.findOne({
       where: {
         student_id: createApplicationDto.student_id,
@@ -46,17 +48,82 @@ export class JobApplicationService {
       throw new ConflictException('Ya has aplicado a esta vacante');
     }
 
-    // Verificar que no haya pasado la fecha límite
     if (new Date() > job.deadline) {
       throw new ConflictException('La fecha límite para aplicar ha pasado');
     }
 
     const application = this.applicationRepo.create({
       ...createApplicationDto,
-      applied_at: new Date()
+      applied_at: new Date(),
+      status: ApplicationStatus.APPLIED
     });
 
-    return await this.applicationRepo.save(application);
+    const savedApplication = await this.applicationRepo.save(application);
+
+    // Crear primer registro en el historial
+    await this.historyService.createHistoryEntry(
+      savedApplication,
+      ApplicationStatus.APPLIED,
+      'Aplicación enviada',
+      'student'
+    );
+
+    return savedApplication;
+  }
+
+  private updateSpecificDate(application: JobApplication, status: ApplicationStatus): void {
+    const now = new Date();
+    switch (status) {
+      case ApplicationStatus.APPLIED:
+        application.applied_at = now;
+        break;
+      case ApplicationStatus.REVIEWED:
+        application.reviewed_at = now;
+        break;
+      case ApplicationStatus.INTERVIEW:
+      case ApplicationStatus.FINAL_INTERVIEW:
+        application.interview_at = now;
+        break;
+      case ApplicationStatus.TECHNICAL_TEST:
+        application.technical_test_at = now;
+        break;
+      case ApplicationStatus.REJECTED:
+      case ApplicationStatus.ACCEPTED:
+      case ApplicationStatus.WITHDRAWN:
+        application.decided_at = now;
+        break;
+    }
+  }
+
+  async getApplicationTimeline(applicationId: string): Promise<ApplicationHistory[]> {
+    return await this.historyService.getApplicationHistory(applicationId);
+  }
+
+  async getFullApplicationDetails(applicationId: string) {
+    const application = await this.applicationRepo.findOne({
+      where: { id: applicationId },
+      relations: ['student', 'job', 'job.company', 'history']
+    });
+
+    if (!application) {
+      throw new NotFoundException('Aplicación no encontrada');
+    }
+
+    const timeline = await this.historyService.getApplicationHistory(applicationId);
+    const lastChange = await this.historyService.getLastStatusChange(applicationId);
+
+    return {
+      application,
+      timeline,
+      last_status_change: lastChange,
+      current_status_duration: lastChange
+        ? this.getDaysSince(lastChange.changed_at)
+        : 0
+    };
+  }
+
+  private getDaysSince(date: Date): number {
+    return Math.ceil((new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   async findByStudent(studentId: string): Promise<JobApplication[]> {
@@ -87,10 +154,31 @@ export class JobApplicationService {
     return application;
   }
 
-  async updateStatus(id: string, status: ApplicationStatus): Promise<JobApplication> {
+  async updateStatus(
+    id: string,
+    status: ApplicationStatus,
+    notes?: string,
+    changedBy: string = 'system'
+  ): Promise<JobApplication> {
     const application = await this.findOne(id);
+
+    // Actualizar estado de la aplicación
     application.status = status;
-    return await this.applicationRepo.save(application);
+
+    // Actualizar fecha específica si corresponde
+    this.updateSpecificDate(application, status);
+
+    const updatedApplication = await this.applicationRepo.save(application);
+
+    // Crear registro en el historial
+    await this.historyService.createHistoryEntry(
+      updatedApplication,
+      status,
+      notes,
+      changedBy
+    );
+
+    return updatedApplication;
   }
 
   async checkExistingApplication(studentId: string, jobId: string): Promise<boolean> {

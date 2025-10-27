@@ -9,13 +9,6 @@ import {
 } from 'typeorm';
 import { StudentSkill } from './student-skill.entity.dto';
 
-export enum SkillLevel {
-  BEGINNER = 'beginner',
-  INTERMEDIATE = 'intermediate',
-  ADVANCED = 'advanced',
-  EXPERT = 'expert'
-}
-
 @Entity('skills')
 export class Skill {
   @ApiProperty({ description: 'ID único del skill' })

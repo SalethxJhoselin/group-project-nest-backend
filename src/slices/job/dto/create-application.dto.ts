@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { ApplicationStatus } from '../entity/job-application.entity';
+import { ApplicationStatus } from 'src/enum/applicationHistory.enum';
 
 export class CreateApplicationDto {
   @ApiProperty({ example: 'Estoy interesado en esta posición porque...', required: false })

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
-import { SkillLevel } from '../entity/skill.entity';
+import { SkillLevel } from 'src/enum/skillLevel.enum';
 
 export class CreateSkillDto {
   @ApiProperty({ example: 'React', description: 'Nombre del skill/habilidad' })

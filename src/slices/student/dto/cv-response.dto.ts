@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { SkillLevel } from 'src/enum/skillLevel.enum';
 import { AcademicInfo } from '../../academic_info/academic_info.entity';
 import { Certification } from '../../certification/certification.entity';
-import { SkillLevel } from '../../skill/entity/skill.entity';
 import { Student } from '../student.entity';
 
 class CVProjectDto {
