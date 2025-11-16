@@ -12,10 +12,12 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateJobDto, UpdateJobDto } from './dto/create-job.dto';
 import { Job } from './entity/job.entity';
 import { JobService } from './job.service';
+import { CandidateResponseDto } from './dto/candidate-response.dto';
 
 @ApiTags('jobs')
 @Controller('jobs')
 export class JobController {
+  applicationService: any;
   constructor(private readonly jobService: JobService) { }
 
   @Post()
@@ -99,4 +101,19 @@ export class JobController {
   async findJobWithCompanyDetails(@Param('id') id: string): Promise<{ job: Job }> {
     return await this.jobService.findJobWithCompanyDetails(id);
   }
+  @Get('company/:companyId')
+@ApiOperation({
+  summary: 'Obtener todos los candidatos que aplicaron a vacantes de una empresa'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Candidatos encontrados',
+  type: [CandidateResponseDto]
+})
+async getCandidatesForCompany(
+  @Param('companyId') companyId: string
+) {
+  return await this.applicationService.getCandidatesForCompany(companyId);
+}
+
 }
