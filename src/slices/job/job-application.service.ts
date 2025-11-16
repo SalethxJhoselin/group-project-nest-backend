@@ -1,56 +1,67 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApplicationStatus } from 'src/enum/applicationHistory.enum';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
+
 import { Student } from '../student/student.entity';
 import { ApplicationHistoryService } from './application-history.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { ApplicationHistory } from './entity/application-history.entity';
 import { JobApplication } from './entity/job-application.entity';
 import { Job } from './entity/job.entity';
+
+import { SkillService } from '../skill/skill.service';
+import { ProjectService } from '../project/project.service';
+
+import { CertificationService } from '../certification/certification.service';
+import { AcademicInfoService } from '../academic_info/academic_info.service';
 
 @Injectable()
 export class JobApplicationService {
   constructor(
     @InjectRepository(JobApplication)
     private applicationRepo: Repository<JobApplication>,
+
     @InjectRepository(Student)
     private studentRepo: Repository<Student>,
+
     @InjectRepository(Job)
     private jobRepo: Repository<Job>,
-    private historyService: ApplicationHistoryService
-  ) { }
 
-  async create(createApplicationDto: CreateApplicationDto & { student_id: string }): Promise<JobApplication> {
-    // Validaciones existentes...
+    private historyService: ApplicationHistoryService,
+
+    private skillService: SkillService,
+    private projectService: ProjectService,
+    private certificationService: CertificationService,
+    private academicInfoService: AcademicInfoService
+  ) {}
+
+
+  async create(createApplicationDto: CreateApplicationDto & { student_id: string }) {
     const student = await this.studentRepo.findOne({
       where: { id: createApplicationDto.student_id }
     });
-    if (!student) {
-      throw new NotFoundException('Estudiante no encontrado');
-    }
+    if (!student) throw new NotFoundException('Estudiante no encontrado');
 
     const job = await this.jobRepo.findOne({
       where: { id: createApplicationDto.job_id, is_active: true }
     });
-    if (!job) {
-      throw new NotFoundException('Vacante no encontrada o inactiva');
-    }
+    if (!job) throw new NotFoundException('Vacante no encontrada o inactiva');
 
-    const existingApplication = await this.applicationRepo.findOne({
+    const existing = await this.applicationRepo.findOne({
       where: {
         student_id: createApplicationDto.student_id,
         job_id: createApplicationDto.job_id
       }
     });
 
-    if (existingApplication) {
-      throw new ConflictException('Ya has aplicado a esta vacante');
-    }
+    if (existing) throw new ConflictException('Ya has aplicado a esta vacante');
 
-    if (new Date() > job.deadline) {
+    if (new Date() > job.deadline)
       throw new ConflictException('La fecha límite para aplicar ha pasado');
-    }
 
     const application = this.applicationRepo.create({
       ...createApplicationDto,
@@ -58,152 +69,161 @@ export class JobApplicationService {
       status: ApplicationStatus.APPLIED
     });
 
-    const savedApplication = await this.applicationRepo.save(application);
+    const saved = await this.applicationRepo.save(application);
 
-    // Crear primer registro en el historial
     await this.historyService.createHistoryEntry(
-      savedApplication,
+      saved,
       ApplicationStatus.APPLIED,
       'Aplicación enviada',
       'student'
     );
 
-    return savedApplication;
+    return saved;
   }
 
-  private updateSpecificDate(application: JobApplication, status: ApplicationStatus): void {
-    const now = new Date();
-    switch (status) {
-      case ApplicationStatus.APPLIED:
-        application.applied_at = now;
-        break;
-      case ApplicationStatus.REVIEWED:
-        application.reviewed_at = now;
-        break;
-      case ApplicationStatus.INTERVIEW:
-      case ApplicationStatus.FINAL_INTERVIEW:
-        application.interview_at = now;
-        break;
-      case ApplicationStatus.TECHNICAL_TEST:
-        application.technical_test_at = now;
-        break;
-      case ApplicationStatus.REJECTED:
-      case ApplicationStatus.ACCEPTED:
-      case ApplicationStatus.WITHDRAWN:
-        application.decided_at = now;
-        break;
-    }
-  }
-
-  async getApplicationTimeline(applicationId: string): Promise<ApplicationHistory[]> {
-    return await this.historyService.getApplicationHistory(applicationId);
-  }
-
-  async getFullApplicationDetails(applicationId: string) {
-    const application = await this.applicationRepo.findOne({
-      where: { id: applicationId },
-      relations: ['student', 'job', 'job.company', 'history']
-    });
-
-    if (!application) {
-      throw new NotFoundException('Aplicación no encontrada');
-    }
-
-    const timeline = await this.historyService.getApplicationHistory(applicationId);
-    const lastChange = await this.historyService.getLastStatusChange(applicationId);
-
-    return {
-      application,
-      timeline,
-      last_status_change: lastChange,
-      current_status_duration: lastChange
-        ? this.getDaysSince(lastChange.changed_at)
-        : 0
-    };
-  }
-
-  private getDaysSince(date: Date): number {
-    return Math.ceil((new Date().getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  async findByStudent(studentId: string): Promise<JobApplication[]> {
-    return await this.applicationRepo.find({
+  findByStudent(studentId: string) {
+    return this.applicationRepo.find({
       where: { student_id: studentId },
       relations: ['job', 'job.company'],
       order: { applied_at: 'DESC' }
     });
   }
 
-  async findByJob(jobId: string): Promise<JobApplication[]> {
-    return await this.applicationRepo.find({
+  findByJob(jobId: string) {
+    return this.applicationRepo.find({
       where: { job_id: jobId },
       relations: ['student'],
       order: { applied_at: 'DESC' }
     });
   }
 
-  async findOne(id: string): Promise<JobApplication> {
-    const application = await this.applicationRepo.findOne({
+  async findOne(id: string) {
+    const app = await this.applicationRepo.findOne({
       where: { id },
       relations: ['student', 'job', 'job.company']
     });
-
-    if (!application) {
-      throw new NotFoundException(`Aplicación con ID ${id} no encontrada`);
-    }
-    return application;
+    if (!app) throw new NotFoundException('Aplicación no encontrada');
+    return app;
   }
 
-  async updateStatus(
-    id: string,
-    status: ApplicationStatus,
-    notes?: string,
-    changedBy: string = 'system'
-  ): Promise<JobApplication> {
+  //-----------------------------------------------------------
+  // UPDATE STATUS
+  //-----------------------------------------------------------
+  async updateStatus(id: string, status: ApplicationStatus, notes?: string, changedBy = 'system') {
     const application = await this.findOne(id);
 
-    // Actualizar estado de la aplicación
     application.status = status;
-
-    // Actualizar fecha específica si corresponde
     this.updateSpecificDate(application, status);
 
-    const updatedApplication = await this.applicationRepo.save(application);
+    const updated = await this.applicationRepo.save(application);
 
-    // Crear registro en el historial
     await this.historyService.createHistoryEntry(
-      updatedApplication,
+      updated,
       status,
       notes,
       changedBy
     );
 
-    return updatedApplication;
+    return updated;
   }
 
-  async checkExistingApplication(studentId: string, jobId: string): Promise<boolean> {
-    const application = await this.applicationRepo.findOne({
-      where: {
-        student_id: studentId,
-        job_id: jobId
-      }
-    });
-    return !!application;
+  private updateSpecificDate(app: JobApplication, status: ApplicationStatus) {
+    const now = new Date();
+    if (status === ApplicationStatus.APPLIED) app.applied_at = now;
+    if (status === ApplicationStatus.REVIEWED) app.reviewed_at = now;
+    if (status === ApplicationStatus.INTERVIEW || status === ApplicationStatus.FINAL_INTERVIEW)
+      app.interview_at = now;
+    if (status === ApplicationStatus.TECHNICAL_TEST) app.technical_test_at = now;
+    if (
+      status === ApplicationStatus.REJECTED ||
+      status === ApplicationStatus.ACCEPTED ||
+      status === ApplicationStatus.WITHDRAWN
+    )
+      app.decided_at = now;
   }
 
-  async getApplicationStats(jobId: string): Promise<{ total: number; byStatus: Record<ApplicationStatus, number> }> {
+  //-----------------------------------------------------------
+  // THIS IS THE NEW ENDPOINT — FULL CANDIDATE DATA
+  //-----------------------------------------------------------
+  async getCandidatesForCompany(companyId: string) {
+    const jobs = await this.jobRepo.find({ where: { company_id: companyId } });
+    if (jobs.length === 0) return [];
+
+    const jobIds = jobs.map(j => j.id);
+
     const applications = await this.applicationRepo.find({
-      where: { job_id: jobId }
+      where: { job_id: In(jobIds) },
+      relations: ['student']
     });
 
-    const byStatus = applications.reduce((acc, app) => {
-      acc[app.status] = (acc[app.status] || 0) + 1;
-      return acc;
-    }, {} as Record<ApplicationStatus, number>);
+    const results: any[] = [];
 
-    return {
-      total: applications.length,
-      byStatus
-    };
+    for (const app of applications) {
+      const job = jobs.find(j => j.id === app.job_id);
+      if (!job) continue;
+
+      const studentId = app.student_id;
+
+      const skills = await this.skillService.getStudentSkills(studentId);
+      const projects = await this.projectService.findByStudentId(studentId);
+      const certifications = await this.certificationService.findByStudentId(studentId);
+      const academicInfo = await this.academicInfoService.findByStudentId(studentId);
+
+      const match = this.calculateMatch(job, skills, projects, certifications);
+results.push({
+  application_id: app.id,
+  job_id: job.id,
+  job_title: job.title,
+
+  status: app.status,
+  applied_at: app.applied_at,
+
+  student: app.student,
+
+  skills,
+  projects,
+  certifications,
+  academicInfo,
+
+  match
+});
+
+     
+    }
+
+    return results;
+  }
+  calculateMatch(job, studentSkills, projects, certifications) {
+    const requiredSkills = job.requirements
+      ? job.requirements.split(',').map(s => s.trim().toLowerCase())
+      : [];
+
+    const skillNames = studentSkills.map(s => s.skill.name.toLowerCase());
+
+    const intersection = requiredSkills.filter(r =>
+      skillNames.includes(r)
+    );
+
+    const skillScore = requiredSkills.length
+      ? (intersection.length / requiredSkills.length) * 60
+      : 0;
+
+    let projectScore = projects.length >= 5 ? 20 :
+                       projects.length >= 3 ? 15 :
+                       projects.length >= 1 ? 10 : 0;
+
+    let certScore = certifications.length >= 3 ? 20 :
+                    certifications.length == 2 ? 15 :
+                    certifications.length == 1 ? 10 : 0;
+
+    return Math.min(95, Math.round(skillScore + projectScore + certScore));
+  }
+
+ 
+  async checkExistingApplication(studentId: string, jobId: string) {
+    const app = await this.applicationRepo.findOne({
+      where: { student_id: studentId, job_id: jobId }
+    });
+    return !!app;
   }
 }
