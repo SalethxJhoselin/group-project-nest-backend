@@ -1,4 +1,3 @@
-// academic_info.entity.ts
 import { ApiProperty } from '@nestjs/swagger';
 import {
   Column,
