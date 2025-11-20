@@ -11,10 +11,12 @@ async function bootstrap() {
 
   // Configuración CORS
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
-    'http://localhost:5174',
     'https://group-project-nest-backend-18gh.onrender.com',
     'https://ficct-talent.netlify.app',
     'http://127.0.0.1:5174',
+    'https://ficct-talent.vercel.app',
+    'http://127.0.0.1:5172',
+    'http://127.0.0.1:5173',
     'http://localhost:3000',
   ];
 
