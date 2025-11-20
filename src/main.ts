@@ -14,10 +14,13 @@ async function bootstrap() {
     'https://group-project-nest-backend-18gh.onrender.com',
     'https://ficct-talent.netlify.app',
     'http://127.0.0.1:5174',
+    'http://localhost:5173',
+    'http://localhost:5174',
     'https://ficct-talent.vercel.app',
     'http://127.0.0.1:5172',
     'http://127.0.0.1:5173',
     'http://localhost:3000',
+    
   ];
 
   app.enableCors({
