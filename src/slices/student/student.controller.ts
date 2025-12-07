@@ -5,7 +5,8 @@ import {
     Get,
     Param,
     Patch,
-    Post
+    Post,
+    Query
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateStudentDto, UpdateStudentDto } from './dto/create-student.dto';
@@ -82,5 +83,43 @@ export class StudentController {
     @ApiResponse({ status: 404, description: 'Estudiante no encontrado' })
     async getCVData(@Param('id') id: string): Promise<CVResponseDto> {
         return await this.studentService.getCompleteCVData(id);
+    }
+
+    @Post(':id/track-view')
+    @ApiOperation({ summary: 'Registrar vista de perfil de estudiante' })
+    @ApiResponse({ status: 201, description: 'Vista registrada' })
+    async trackView(
+        @Param('id') studentId: string,
+        @Body() body: { company_id?: string; ip_address?: string; user_agent?: string }
+    ) {
+        await this.studentService.trackProfileView(
+            studentId,
+            body.company_id,
+            body.ip_address,
+            body.user_agent
+        );
+        return { message: 'Vista registrada' };
+    }
+
+    @Get(':id/views/count')
+    @ApiOperation({ summary: 'Obtener conteo de vistas de perfil de estudiante' })
+    @ApiResponse({ status: 200, description: 'Conteo de vistas' })
+    async getViewsCount(
+        @Param('id') studentId: string,
+        @Query('days') days?: number
+    ) {
+        const count = await this.studentService.getProfileViewsCount(studentId, days);
+        return { count };
+    }
+
+    @Get(':id/recent-viewers')
+    @ApiOperation({ summary: 'Obtener empresas que vieron el perfil recientemente' })
+    @ApiResponse({ status: 200, description: 'Lista de empresas' })
+    async getRecentViewers(
+        @Param('id') studentId: string,
+        @Query('limit') limit?: number
+    ) {
+        const viewers = await this.studentService.getRecentViewers(studentId, limit || 10);
+        return viewers;
     }
 }

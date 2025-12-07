@@ -123,7 +123,7 @@ export class AdminController {
         @Body() dto: CreateAnnouncementDto,
     ): Promise<AnnouncementDto> {
         // TODO: Get admin ID from JWT token
-        const adminId = 'admin-placeholder-id';
+        const adminId = '00000000-0000-0000-0000-000000000000'; // Default UUID hasta implementar JWT
         return this.adminService.createAnnouncement(dto, adminId);
     }
 
