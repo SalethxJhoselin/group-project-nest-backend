@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AcademicInfoModule } from './slices/academic_info/academic-info.module';
 import { AuthModule } from './slices/auth/auth.module';
@@ -11,6 +9,8 @@ import { ProjectModule } from './slices/project/project.module';
 import { SkillModule } from './slices/skill/skill.module';
 import { StudentModule } from './slices/student/student.module';
 import { TechnologyModule } from './slices/technology/technology.module';
+import { RecommendationModule } from './slices/recommendation/recommendation.module';
+import { AdminModule } from './slices/admin/admin.module';
 
 @Module({
   imports: [
@@ -23,9 +23,11 @@ import { TechnologyModule } from './slices/technology/technology.module';
     ProjectModule,
     SkillModule,
     TechnologyModule,
-    JobModule
+    JobModule,
+    RecommendationModule,
+    AdminModule
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule { }

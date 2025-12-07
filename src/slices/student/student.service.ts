@@ -6,6 +6,7 @@ import { Certification } from '../certification/certification.entity';
 import { Project } from '../project/project.entity';
 import { StudentSkill } from '../skill/entity/student-skill.entity.dto';
 import { CreateStudentDto, UpdateStudentDto } from './dto/create-student.dto';
+import { StudentProfileView } from './entity/student-profile-view.entity';
 import { Student } from './student.entity';
 
 @Injectable()
@@ -21,6 +22,8 @@ export class StudentService {
         private projectRepo: Repository<Project>,
         @InjectRepository(StudentSkill)
         private studentSkillRepo: Repository<StudentSkill>,
+        @InjectRepository(StudentProfileView)
+        private profileViewRepo: Repository<StudentProfileView>,
     ) { }
 
     async create(createStudentDto: CreateStudentDto & { id: string }): Promise<Student> {
@@ -149,5 +152,58 @@ export class StudentService {
             projects: transformedProjects,
             skills: transformedSkills
         };
+    }
+
+    // ====================================
+    // PROFILE VIEW METHODS
+    // ====================================
+
+    // Registrar vista de perfil de estudiante
+    async trackProfileView(
+        studentId: string,
+        companyId?: string,
+        ipAddress?: string,
+        userAgent?: string
+    ): Promise<void> {
+        const view = this.profileViewRepo.create({
+            student_id: studentId,
+            company_id: companyId,
+            ip_address: ipAddress,
+            user_agent: userAgent
+        });
+        await this.profileViewRepo.save(view);
+    }
+
+    // Obtener conteo de vistas del perfil
+    async getProfileViewsCount(studentId: string, days?: number): Promise<number> {
+        const query = this.profileViewRepo
+            .createQueryBuilder('view')
+            .where('view.student_id = :studentId', { studentId });
+
+        if (days) {
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            query.andWhere('view.viewed_at >= :startDate', { startDate });
+        }
+
+        return await query.getCount();
+    }
+
+    // Obtener las empresas que vieron el perfil recientemente
+    async getRecentViewers(studentId: string, limit: number = 10): Promise<any[]> {
+        const views = await this.profileViewRepo
+            .createQueryBuilder('view')
+            .leftJoinAndSelect('view.company', 'company')
+            .where('view.student_id = :studentId', { studentId })
+            .andWhere('view.company_id IS NOT NULL')
+            .orderBy('view.viewed_at', 'DESC')
+            .limit(limit)
+            .getMany();
+
+        return views.map(v => ({
+            company_id: v.company_id,
+            company_name: v.company?.name || 'Empresa',
+            viewed_at: v.viewed_at
+        }));
     }
 }

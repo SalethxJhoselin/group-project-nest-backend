@@ -5,17 +5,21 @@ import { Certification } from '../certification/certification.entity';
 import { JobApplication } from '../job/entity/job-application.entity';
 import { Project } from '../project/project.entity';
 import { StudentSkill } from '../skill/entity/student-skill.entity.dto';
+import { StudentProfileView } from './entity/student-profile-view.entity';
 import { StudentController } from './student.controller';
 import { Student } from './student.entity';
 import { StudentService } from './student.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Student,
+  imports: [TypeOrmModule.forFeature([
+    Student,
     AcademicInfo,
     Certification,
     Project,
     StudentSkill,
-    JobApplication])],
+    JobApplication,
+    StudentProfileView
+  ])],
   providers: [StudentService],
   controllers: [StudentController],
   exports: [StudentService],

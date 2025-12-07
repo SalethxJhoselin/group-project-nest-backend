@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
@@ -8,6 +9,9 @@ dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Activar validación global
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // Configuración CORS
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
@@ -20,6 +24,7 @@ async function bootstrap() {
     'http://127.0.0.1:5172',
     'http://127.0.0.1:5173',
     'http://localhost:3000',
+
   ];
 
   app.enableCors({
