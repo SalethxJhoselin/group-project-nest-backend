@@ -83,38 +83,65 @@ export class AuthService {
   // Inicio de sesión con validación de tipo
   // ----------------------------
   async login(dto: LoginDto, userType: 'student' | 'company'): Promise<LoginResponseDto> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: dto.email,
-      password: dto.password,
-    });
+    // Modo desarrollo: bypass de Supabase Auth para testing local
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
+    let userId: string;
 
-    if (error) {
-      if (error.message === 'Email not confirmed') {
-        throw new UnauthorizedException('Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada.');
+    if (isDevelopment) {
+      // En desarrollo, buscar el usuario directamente en la BD sin validar Supabase
+      
+      if (userType === 'student') {
+        const student = await this.studentRepo.findOne({ where: { email: dto.email } });
+        if (!student) {
+          throw new UnauthorizedException('Estudiante no encontrado.');
+        }
+        userId = student.id;
+      } else if (userType === 'company') {
+        const company = await this.companyRepo.findOne({ where: { email: dto.email } });
+        if (!company) {
+          throw new UnauthorizedException('Empresa no encontrada.');
+        }
+        userId = company.id;
+      } else {
+        throw new UnauthorizedException('Tipo de usuario no válido.');
       }
-      if (error.message === 'Invalid login credentials') {
-        throw new UnauthorizedException('Credenciales incorrectas.');
+    } else {
+      // En producción, validar con Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: dto.email,
+        password: dto.password,
+      });
+
+      if (error) {
+        if (error.message === 'Email not confirmed') {
+          throw new UnauthorizedException('Tu correo aún no ha sido confirmado. Revisa tu bandeja de entrada.');
+        }
+        if (error.message === 'Invalid login credentials') {
+          throw new UnauthorizedException('Credenciales incorrectas.');
+        }
+        throw new UnauthorizedException(error.message);
       }
-      throw new UnauthorizedException(error.message);
+      userId = data.user.id;
     }
 
     if (userType === 'student') {
-      const student = await this.studentRepo.findOne({ where: { id: data.user.id } });
+      const student = await this.studentRepo.findOne({ where: { id: userId } });
       if (!student) throw new UnauthorizedException('No eres un estudiante registrado.');
       return {
         user: { ...student, user_type: 'student' },
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+        access_token: 'dev-token-' + userId,
+        refresh_token: 'dev-refresh-' + userId,
       };
     }
 
     if (userType === 'company') {
-      const company = await this.companyRepo.findOne({ where: { id: data.user.id } });
+      const company = await this.companyRepo.findOne({ where: { id: userId } });
       if (!company) throw new UnauthorizedException('No eres una empresa registrada.');
       return {
         user: { ...company, user_type: 'company' },
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+        access_token: 'dev-token-' + userId,
+        refresh_token: 'dev-refresh-' + userId,
       };
     }
 

@@ -1,4 +1,5 @@
 import { IsDate, IsEmail, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class RegisterStudentDto {
     @IsEmail()
@@ -23,6 +24,7 @@ export class RegisterStudentDto {
     @IsString()
     phone_number?: string;
 
+    @Type(() => Date)
     @IsDate()
     birthDate: Date;
 

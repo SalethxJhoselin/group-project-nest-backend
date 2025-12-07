@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { Admin } from 'src/slices/admin/admin.entity';
 import { AcademicInfo } from 'src/slices/academic_info/academic_info.entity';
 import { Certification } from 'src/slices/certification/certification.entity';
 import { Company } from 'src/slices/company/company.entity';
@@ -20,7 +21,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     username: configService.get('DATABASE_USERNAME'),
     password: configService.get('DATABASE_PASSWORD'),
     database: configService.get('DATABASE_NAME'),
-    entities: [Student, Company, AcademicInfo, Certification, Project, Skill, StudentSkill,
+    entities: [Admin, Student, Company, AcademicInfo, Certification, Project, Skill, StudentSkill,
         Technology, ProjectTechnology, Job, JobApplication, ApplicationHistory],
     synchronize: true,
     ssl: { rejectUnauthorized: false },
