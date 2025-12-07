@@ -4,12 +4,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Company } from './company.entity';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/create-company.dto';
+import { CompanyProfileView } from './entity/company-profile-view.entity';
 
 @Injectable()
 export class CompanyService {
     constructor(
         @InjectRepository(Company)
         private companyRepo: Repository<Company>,
+        @InjectRepository(CompanyProfileView)
+        private profileViewRepo: Repository<CompanyProfileView>,
     ) {}
 
     async create(createCompanyDto: CreateCompanyDto & { id: string }): Promise<Company> {
@@ -60,6 +63,37 @@ export class CompanyService {
     async remove(id: string): Promise<void> {
         const company = await this.findOne(id);
         await this.companyRepo.remove(company);
+    }
+
+    // Registrar vista de perfil
+    async trackProfileView(
+        companyId: string, 
+        studentId?: string, 
+        ipAddress?: string, 
+        userAgent?: string
+    ): Promise<void> {
+        const view = this.profileViewRepo.create({
+            company_id: companyId,
+            student_id: studentId,
+            ip_address: ipAddress,
+            user_agent: userAgent
+        });
+        await this.profileViewRepo.save(view);
+    }
+
+    // Obtener conteo de vistas
+    async getProfileViewsCount(companyId: string, days?: number): Promise<number> {
+        const query = this.profileViewRepo
+            .createQueryBuilder('view')
+            .where('view.company_id = :companyId', { companyId });
+
+        if (days) {
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            query.andWhere('view.viewed_at >= :startDate', { startDate });
+        }
+
+        return await query.getCount();
     }
 
     async getProfile(id: string): Promise<Company> {

@@ -31,10 +31,14 @@ export class JobService {
   async findAll(companyId?: string, jobType?: string, location?: string): Promise<Job[]> {
     const query = this.jobRepo.createQueryBuilder('job')
       .leftJoinAndSelect('job.company', 'company')
-      .where('job.is_active = :isActive', { isActive: true });
+      .leftJoinAndSelect('job.applications', 'applications')
+      .leftJoinAndSelect('applications.student', 'student');
 
+    // Si hay companyId, filtrar por empresa; sino mostrar todas las activas
     if (companyId) {
-      query.andWhere('job.company_id = :companyId', { companyId });
+      query.where('job.company_id = :companyId', { companyId });
+    } else {
+      query.where('job.is_active = :isActive', { isActive: true });
     }
 
     if (jobType) {

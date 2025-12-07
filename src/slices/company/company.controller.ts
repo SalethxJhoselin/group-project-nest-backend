@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
+  Ip,
   Param,
   Patch,
   Post,
@@ -75,5 +77,30 @@ export class CompanyController {
     @ApiOperation({ summary: 'Obtener perfil de la empresa' })
     async getProfile(@Param('id') id: string): Promise<Company> {
         return await this.companyService.getProfile(id);
+    }
+
+    @Post(':id/track-view')
+    @ApiOperation({ summary: 'Registrar vista de perfil de empresa' })
+    @ApiResponse({ status: 201, description: 'Vista registrada' })
+    async trackView(
+        @Param('id') companyId: string,
+        @Body('student_id') studentId: string,
+        @Ip() ipAddress: string,
+        @Headers('user-agent') userAgent: string
+    ): Promise<{ message: string }> {
+        await this.companyService.trackProfileView(companyId, studentId, ipAddress, userAgent);
+        return { message: 'Vista registrada' };
+    }
+
+    @Get(':id/views/count')
+    @ApiOperation({ summary: 'Obtener conteo de vistas de perfil' })
+    @ApiQuery({ name: 'days', required: false, description: 'Días hacia atrás (opcional)' })
+    @ApiResponse({ status: 200, description: 'Conteo de vistas' })
+    async getViewsCount(
+        @Param('id') companyId: string,
+        @Query('days') days?: number
+    ): Promise<{ count: number }> {
+        const count = await this.companyService.getProfileViewsCount(companyId, days);
+        return { count };
     }
 }

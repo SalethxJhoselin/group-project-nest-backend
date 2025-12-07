@@ -5,9 +5,10 @@ import { Job } from '../job/entity/job.entity';
 import { CompanyController } from './company.controller';
 import { Company } from './company.entity';
 import { CompanyService } from './company.service';
+import { CompanyProfileView } from './entity/company-profile-view.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Company, Job])],
+    imports: [TypeOrmModule.forFeature([Company, Job, CompanyProfileView])],
     providers: [CompanyService],
     controllers: [CompanyController],
     exports: [CompanyService],

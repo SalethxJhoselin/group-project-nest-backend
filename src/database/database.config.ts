@@ -4,6 +4,7 @@ import { Admin } from 'src/slices/admin/admin.entity';
 import { AcademicInfo } from 'src/slices/academic_info/academic_info.entity';
 import { Certification } from 'src/slices/certification/certification.entity';
 import { Company } from 'src/slices/company/company.entity';
+import { CompanyProfileView } from 'src/slices/company/entity/company-profile-view.entity';
 import { ApplicationHistory } from 'src/slices/job/entity/application-history.entity';
 import { JobApplication } from 'src/slices/job/entity/job-application.entity';
 import { Job } from 'src/slices/job/entity/job.entity';
@@ -21,7 +22,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     username: configService.get('DATABASE_USERNAME'),
     password: configService.get('DATABASE_PASSWORD'),
     database: configService.get('DATABASE_NAME'),
-    entities: [Admin, Student, Company, AcademicInfo, Certification, Project, Skill, StudentSkill,
+    entities: [Admin, Student, Company, CompanyProfileView, AcademicInfo, Certification, Project, Skill, StudentSkill,
         Technology, ProjectTechnology, Job, JobApplication, ApplicationHistory],
     synchronize: true,
     ssl: { rejectUnauthorized: false },
