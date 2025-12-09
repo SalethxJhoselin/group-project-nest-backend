@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { AcademicInfoModule } from './slices/academic_info/academic-info.module';
 import { AuthModule } from './slices/auth/auth.module';
@@ -11,9 +12,14 @@ import { StudentModule } from './slices/student/student.module';
 import { TechnologyModule } from './slices/technology/technology.module';
 import { RecommendationModule } from './slices/recommendation/recommendation.module';
 import { AdminModule } from './slices/admin/admin.module';
+import { TestsModule } from './tests/tests.module';
+import { StatsModule } from './slices/stats/stats.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     DatabaseModule,
     AuthModule,
     StudentModule,
@@ -25,7 +31,9 @@ import { AdminModule } from './slices/admin/admin.module';
     TechnologyModule,
     JobModule,
     RecommendationModule,
-    AdminModule
+    AdminModule,
+    TestsModule,
+    StatsModule,
   ],
   controllers: [],
   providers: [],
